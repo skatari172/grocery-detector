@@ -1,0 +1,25 @@
+# Node.js
+frontend/node_modules/
+
+# React Native cache
+frontend/.expo/
+frontend/.expo-shared/
+
+# macOS files
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# Model weights, temp images
+*.pt
+*.jpg
+*.png
+
+# YOLO training artifacts
+backend/yolov5/runs/
+backend/yolov5/weights/
+
+# Env files
+.env
