@@ -1,57 +1,36 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from model_inference import load_model, predict_image
-from preprocessing import preprocess_image
-import uvicorn
-import numpy as np
-from typing import List, Dict
-import json
+from model_inference import run_inference
+import io
+from PIL import Image
 
-app = FastAPI(title="Grocery Detector API")
+app = FastAPI()
 
-# Configure CORS
+# Enable CORS for your mobile app or Swagger UI
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
-    allow_credentials=True,
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Load the model at startup
-model = None
-
-@app.on_event("startup")
-async def startup_event():
-    global model
-    model = load_model()
-
 @app.get("/")
 async def root():
-    return {"message": "Grocery Detector API is running"}
+    return {"message": "Grocery Detector API is running!"}
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "message": "Server is running"}
 
 @app.post("/predict")
-async def predict(file: UploadFile = File(...)) -> Dict:
-    """
-    Endpoint to predict grocery items in an uploaded image
-    """
+async def predict(file: UploadFile = File(...)):
+    # Read the upload into memory
+    contents = await file.read()
     try:
-        # Read and preprocess the image
-        contents = await file.read()
-        processed_image = preprocess_image(contents)
-        
-        # Run prediction
-        predictions = predict_image(model, processed_image)
-        
-        return {
-            "success": True,
-            "predictions": predictions
-        }
-    except Exception as e:
-        return {
-            "success": False,
-            "error": str(e)
-        }
+        img = Image.open(io.BytesIO(contents)).convert("RGB")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid image file")
 
-if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True) 
+    # Run inference and return JSON
+    results = run_inference(img)
+    return {"results": results}

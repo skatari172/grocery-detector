@@ -1,45 +1,39 @@
-import torch
-import numpy as np
-from typing import List, Dict, Any
+# model_inference.py
 import os
+import torch
+from PIL import Image
 
-def load_model():
-    """
-    Load the YOLOv5 model
-    """
-    try:
-        # Load the model (you'll need to download or train your own model)
-        model = torch.hub.load('ultralytics/yolov5', 'custom', 
-                             path='yolov5/best.pt',  # Update this path to your model
-                             force_reload=True)
-        model.conf = 0.25  # Confidence threshold
-        return model
-    except Exception as e:
-        raise Exception(f"Error loading model: {str(e)}")
+# ——————————————————————————————————————————
+# 1) Load the model exactly once at import time
+print("👉 Loading YOLOv5 model from local directory…")
+repo_dir = os.path.join(os.path.dirname(__file__), "yolov5")
+model = torch.hub.load(
+    repo_or_dir=repo_dir,        # local path to your cloned yolov5/
+    model="yolov5s",              # or yolov5n, yolov5m, etc.
+    pretrained=True,              
+    source="local",               # DO NOT hit GitHub
+    trust_repo=True               # skip any “untrusted repo?” prompt
+)
+model.eval()
+print("✅ YOLOv5 is ready!")
+# ——————————————————————————————————————————
 
-def predict_image(model: Any, image: np.ndarray) -> List[Dict]:
+def run_inference(img: Image.Image):
     """
-    Run prediction on the input image
+    img: a PIL.Image in RGB mode
+    Returns: list of {label, confidence, box:[x1,y1,x2,y2]}
     """
-    try:
-        # Run inference
-        results = model(image)
-        
-        # Process results
-        predictions = []
-        for det in results.xyxy[0]:  # xyxy format
-            x1, y1, x2, y2, conf, cls = det.cpu().numpy()
-            predictions.append({
-                "class": int(cls),
-                "confidence": float(conf),
-                "bbox": {
-                    "x1": float(x1),
-                    "y1": float(y1),
-                    "x2": float(x2),
-                    "y2": float(y2)
-                }
-            })
-        
-        return predictions
-    except Exception as e:
-        raise Exception(f"Error during prediction: {str(e)}") 
+    results = model(img)                # very fast now that it's loaded
+    df = results.pandas().xyxy[0]       # get the pandas DataFrame
+
+    output = []
+    for _, row in df.iterrows():
+        output.append({
+            "label":      row["name"],
+            "confidence": float(row["confidence"]),
+            "box":       [
+                float(row["xmin"]), float(row["ymin"]),
+                float(row["xmax"]), float(row["ymax"])
+            ]
+        })
+    return output
