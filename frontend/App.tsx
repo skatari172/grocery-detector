@@ -8,35 +8,45 @@ import {
   Text,
   ActivityIndicator,
   StyleSheet,
+  Alert,
 } from 'react-native';
-import { launchImageLibrary, Asset } from 'react-native-image-picker';
+import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 
 export default function App() {
-  const [photo, setPhoto] = useState<Asset | null>(null);
+  const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [result, setResult] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
 
-  const pickImage = () => {
-    launchImageLibrary(
-      { mediaType: 'photo' },
-      response => {
-        if (response.didCancel) return;
-        if (response.errorCode) {
-          console.error('ImagePicker Error: ', response.errorMessage);
-          return;
-        }
-        if (response.assets?.length) {
-          setPhoto(response.assets[0]);
-          setResult(null);
-        }
-      }
-    );
+  // Replace with your actual backend URL
+  const BACKEND_URL = 'http://10.0.0.12:4000'; // Update this with your computer's IP
+
+  const pickImage = async () => {
+    // Ask for permission
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission denied', 'We need camera roll permissions!');
+      return;
+    }
+    // Launch picker
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setPhoto(result.assets[0]);
+      setResult(null);
+    }
   };
 
   const uploadImage = async () => {
-    if (!photo?.uri) return;
+    if (!photo?.uri) {
+      Alert.alert('Error', 'No photo selected');
+      return;
+    }
+    
     setUploading(true);
+    console.log('Uploading photo to:', `${BACKEND_URL}/predict`);
 
     const formData = new FormData();
     formData.append('file', {
@@ -46,14 +56,31 @@ export default function App() {
     } as any);
 
     try {
+      console.log('Sending request...');
       const res = await axios.post(
-        'http://YOUR_LOCAL_IP:4000/predict',
+        `${BACKEND_URL}/predict`,
         formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
+        { 
+          headers: { 
+            'Content-Type': 'multipart/form-data' 
+          },
+          timeout: 30000, // 30 second timeout
+        }
       );
+      console.log('Response received:', res.data);
       setResult(res.data);
-    } catch {
-      setResult({ error: 'Upload failed' });
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      let errorMessage = 'Upload failed';
+      if (error.response) {
+        errorMessage = `Server error: ${error.response.status}`;
+      } else if (error.request) {
+        errorMessage = 'Network error - check your connection';
+      } else {
+        errorMessage = error.message || 'Unknown error';
+      }
+      setResult({ error: errorMessage });
+      Alert.alert('Upload Failed', errorMessage);
     } finally {
       setUploading(false);
     }
