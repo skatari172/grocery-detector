@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   Alert,
+  TouchableOpacity,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
@@ -30,6 +31,24 @@ export default function App() {
     }
     // Launch picker
     const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setPhoto(result.assets[0]);
+      setResult(null);
+    }
+  };
+
+  const takePhoto = async () => {
+    // Ask for camera permission
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission denied', 'We need camera permissions!');
+      return;
+    }
+    // Launch camera
+    const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.8,
     });
@@ -86,6 +105,12 @@ export default function App() {
     }
   };
 
+  const resetApp = () => {
+    setPhoto(null);
+    setResult(null);
+    setUploading(false);
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -95,24 +120,77 @@ export default function App() {
         </Text>
         <Text style={styles.tagline}>Scan • Detect • Enjoy</Text>
 
-        <View style={styles.buttons}>
-          <View style={styles.button}>
-            <Button title="Choose Photo" onPress={pickImage} />
-          </View>
+        <View style={styles.buttonsRow}>
+          <TouchableOpacity style={styles.smallButton} onPress={pickImage}>
+            <Text style={styles.buttonText}>Choose Photo</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.smallButton} onPress={takePhoto}>
+            <Text style={styles.buttonText}>Take Photo</Text>
+          </TouchableOpacity>
           {photo && (
-            <View style={styles.button}>
-              <Button
-                title={uploading ? 'Analyzing...' : 'Upload & Analyze'}
-                onPress={uploadImage}
-                disabled={uploading}
-              />
-            </View>
+            <TouchableOpacity style={styles.smallButton} onPress={uploadImage} disabled={uploading}>
+              <Text style={styles.buttonText}>{uploading ? 'Analyzing...' : 'Upload & Analyze'}</Text>
+            </TouchableOpacity>
           )}
+        </View>
+        <View style={styles.resetRow}>
+          <TouchableOpacity style={styles.resetButton} onPress={resetApp}>
+            <Text style={styles.resetButtonText}>Reset</Text>
+          </TouchableOpacity>
         </View>
 
         {uploading && <ActivityIndicator size="large" style={styles.loader} />}
 
-        {photo?.uri && <Image source={{ uri: photo.uri }} style={styles.image} />}
+        {photo?.uri && (
+          <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ width: 280, height: 280, position: 'relative' }}>
+              <Image
+                source={{ uri: photo.uri }}
+                style={styles.image}
+              />
+              {result?.results?.map((item: any, idx: number) => {
+                // Get original image size (fallback to 280x280 if not available)
+                const originalWidth = photo.width || 280;
+                const originalHeight = photo.height || 280;
+                const [xmin, ymin, xmax, ymax] = item.box;
+                const scaleX = 280 / originalWidth;
+                const scaleY = 280 / originalHeight;
+                const left = xmin * scaleX;
+                const top = ymin * scaleY;
+                const width = (xmax - xmin) * scaleX;
+                const height = (ymax - ymin) * scaleY;
+                return (
+                  <View
+                    key={idx}
+                    style={{
+                      position: 'absolute',
+                      left,
+                      top,
+                      width,
+                      height,
+                      borderWidth: 2,
+                      borderColor: 'red',
+                      borderRadius: 4,
+                    }}
+                  >
+                    <Text style={{
+                      backgroundColor: 'rgba(255,0,0,0.7)',
+                      color: '#fff',
+                      fontSize: 10,
+                      paddingHorizontal: 2,
+                      position: 'absolute',
+                      top: -16,
+                      left: 0,
+                      borderRadius: 2,
+                    }}>
+                      {item.label} ({(item.confidence * 100).toFixed(1)}%)
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
 
         {result && (
           <View style={styles.result}>
@@ -157,13 +235,42 @@ const styles = StyleSheet.create({
     color: '#888',
     marginBottom: 24,
   },
-  buttons: {
+  buttonsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     marginBottom: 16,
+    flexWrap: 'wrap',
   },
-  button: {
-    marginHorizontal: 8,
+  smallButton: {
+    backgroundColor: '#4a90e2',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    marginHorizontal: 4,
+    marginBottom: 4,
+    minWidth: 90,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  resetRow: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  resetButton: {
+    backgroundColor: '#e94e77',
+    paddingVertical: 7,
+    paddingHorizontal: 18,
+    borderRadius: 6,
+    marginTop: 8,
+  },
+  resetButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
   },
   loader: {
     marginVertical: 20,
