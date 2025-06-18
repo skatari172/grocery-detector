@@ -13,7 +13,7 @@ def get_model():
         repo_dir = os.path.join(os.path.dirname(__file__), "yolov5")
         _model = torch.hub.load(
             repo_or_dir=repo_dir,        # local path to your cloned yolov5/
-            model="yolov5s",              # or yolov5n, yolov5m, etc.
+            model="yolov5n",              # or yolov5n, yolov5m, etc.
             pretrained=True,              
             source="local",               # DO NOT hit GitHub
             trust_repo=True               # skip any "untrusted repo?" prompt
