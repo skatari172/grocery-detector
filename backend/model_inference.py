@@ -2,6 +2,7 @@
 import os
 import torch
 from PIL import Image
+import sys
 
 # Global variable to store the model
 _model = None
@@ -9,17 +10,15 @@ _model = None
 def get_model():
     global _model
     if _model is None:
-        print("👉 Loading YOLOv5 model from local directory…")
-        repo_dir = os.path.join(os.path.dirname(__file__), "yolov5")
-        _model = torch.hub.load(
-            repo_or_dir=repo_dir,        # local path to your cloned yolov5/
-            model="yolov5n",              # or yolov5n, yolov5m, etc.
-            pretrained=True,              
-            source="local",               # DO NOT hit GitHub
-            trust_repo=True               # skip any "untrusted repo?" prompt
-        )
-        _model.eval()
-        print("✅ YOLOv5 is ready!")
+        print("👉 Loading YOLOv5 nano model...", flush=True)
+        try:
+            # Load the nano model (much faster and smaller)
+            _model = torch.hub.load('ultralytics/yolov5', 'yolov5n', pretrained=True)
+            _model.eval()
+            print("✅ YOLOv5 nano is ready!", flush=True)
+        except Exception as e:
+            print(f"❌ Error loading model: {e}", flush=True)
+            sys.exit(1)
     return _model
 
 def run_inference(img: Image.Image):

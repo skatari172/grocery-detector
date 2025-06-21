@@ -24,3 +24,4 @@ backend/yolov5/weights/
 # Env files
 .env
 yolov5/
+venv/

@@ -83,7 +83,7 @@ export default function App() {
           headers: { 
             'Content-Type': 'multipart/form-data' 
           },
-          timeout: 30000, // 30 second timeout
+          timeout: 120000, // 120 second timeout for model loading
         }
       );
       console.log('Response received:', res.data);
@@ -129,7 +129,7 @@ export default function App() {
           </TouchableOpacity>
           {photo && (
             <TouchableOpacity style={styles.smallButton} onPress={uploadImage} disabled={uploading}>
-              <Text style={styles.buttonText}>{uploading ? 'Analyzing...' : 'Upload & Analyze'}</Text>
+              <Text style={styles.buttonText}>{uploading ? 'Loading Model & Analyzing...' : 'Upload & Analyze'}</Text>
             </TouchableOpacity>
           )}
         </View>

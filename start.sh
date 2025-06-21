@@ -45,6 +45,8 @@ check_yolo_ready() {
 echo "🧹 Cleaning up existing processes..."
 pkill -f "uvicorn main:app" 2>/dev/null
 pkill -f "expo start" 2>/dev/null
+lsof -ti:4000 | xargs kill -9 2>/dev/null
+lsof -ti:8081 | xargs kill -9 2>/dev/null
 
 # Clear torch cache to avoid cached model issues
 echo "🗑️  Clearing torch cache..."
@@ -53,11 +55,16 @@ rm -rf ~/.cache/torch/hub/ultralytics_yolov5_master 2>/dev/null
 # Start backend with virtual environment
 echo "🔧 Starting backend server..."
 cd backend
+echo "   Checking for virtual environment..."
+if [ ! -d "venv" ]; then
+    echo "   venv not found. Creating virtual environment..."
+    python3 -m venv venv
+fi
 echo "   Activating virtual environment..."
 source venv/bin/activate
-echo "   Installing/updating dependencies..."
+echo "   Installing/updating dependencies (using pip cache)..."
 pip install --upgrade pip > /dev/null 2>&1
-pip install -r requirements.txt > /dev/null 2>&1
+pip install -r requirements.txt --cache-dir ~/.cache/pip > /dev/null 2>&1
 echo "   Verifying key dependencies..."
 python3 -c "import fastapi, multipart, requests; print('All dependencies installed successfully')" > /dev/null 2>&1
 if [ $? -ne 0 ]; then
@@ -83,10 +90,18 @@ if ! check_yolo_ready; then
     exit 1
 fi
 
+# Trigger model loading to see the messages
+echo "🤖 Triggering YOLO model loading..."
+sleep 2
+curl -s -X POST http://localhost:4000/predict \
+    -H "Content-Type: multipart/form-data" \
+    -F "file=@/dev/null" > /dev/null 2>&1
+echo "   Model loading triggered - check logs above for YOLOv5 messages"
+
 # Start frontend
 echo "📱 Starting frontend..."
 cd frontend
-npx expo start &
+npx expo start --host lan --port 8081 &
 FRONTEND_PID=$!
 cd ..
 
