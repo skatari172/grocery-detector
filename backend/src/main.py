@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from model_inference import run_inference
+from backend.src.model_inference import run_inference
 import io
 from PIL import Image
 
