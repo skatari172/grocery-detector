@@ -1,27 +1,70 @@
-# Node.js
-frontend/node_modules/
+# ============== #
+# Project Root #
+# ============== #
+.DS_Store
+*.log*
+.env
+.env.*
 
-# React Native cache
+# ============ #
+# Frontend #
+# ============ #
+frontend/node_modules/
 frontend/.expo/
 frontend/.expo-shared/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
 
-# macOS files
-.DS_Store
+# ============ #
+# Backend #
+# ============ #
+# IDE / OS Files
+backend/.vscode/
+backend/.idea/
+
+# Python virtual environment & cache
+backend/venv/
+backend/**/__pycache__/
+backend/**/*.pyc
+
+# Large dataset & training artifacts to IGNORE
+backend/yolov5/runs/
+backend/datasets/
+
+# Model weight files to IGNORE
+backend/*.pt
+backend/yolov5/*.pt
 
 # Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+*.so
 
-# Model weights, temp images
-*.pt
-*.jpg
-*.png
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
 
-# YOLO training artifacts
-backend/yolov5/runs/
-backend/yolov5/weights/
-
-# Env files
+# Environment files
 .env
-yolov5/
-venv/
+.env.local
+.env.production
+
+# IDE files
+*.sublime-*
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Keep the converted dataset for training
+# backend/datasets/grocery/ - This should be tracked for training
+# backend/yolo_annotations/ - This should be tracked for training
+# backend/classes.txt - This should be tracked for training

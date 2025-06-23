@@ -1,0 +1,8 @@
+train: ../groceries-det/dataset/images/train
+val:   ../groceries-det/dataset/images/val
+
+nc: 25
+names: [
+  "beans","cake","candy","cereal","chips","chocolate","coffee","corn","fish",
+  "flour","jam","juice","milk","pasta","peanut_butter","rice","soda","soup",
+  "tea","water","yogurt","(…plus any remaining)"]

@@ -72,7 +72,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 echo "   Starting uvicorn server..."
-python3 -m uvicorn main:app --reload --host 0.0.0.0 --port 4000 &
+python3 -m uvicorn src.main:app --reload --host 0.0.0.0 --port 4000 &
 BACKEND_PID=$!
 cd ..
 
