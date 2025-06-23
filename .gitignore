@@ -28,13 +28,14 @@ backend/venv/
 backend/**/__pycache__/
 backend/**/*.pyc
 
-# Large dataset & training artifacts to IGNORE
-backend/yolov5/runs/
+# Cloned YOLOv5 repository and training artifacts
+backend/yolov5/
+
+# Large dataset folder
 backend/datasets/
 
-# Model weight files to IGNORE
+# Model weight files
 backend/*.pt
-backend/yolov5/*.pt
 
 # Python
 __pycache__/
